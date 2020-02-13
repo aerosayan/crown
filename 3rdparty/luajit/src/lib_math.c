@@ -1,6 +1,6 @@
 /*
 ** Math library.
-** Copyright (C) 2005-2017 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2020 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #include <math.h>
@@ -33,25 +33,19 @@ LJLIB_ASM(math_sqrt)		LJLIB_REC(math_unary IRFPM_SQRT)
   lj_lib_checknum(L, 1);
   return FFH_RETRY;
 }
-LJLIB_ASM_(math_log10)		LJLIB_REC(math_unary IRFPM_LOG10)
-LJLIB_ASM_(math_exp)		LJLIB_REC(math_unary IRFPM_EXP)
-LJLIB_ASM_(math_sin)		LJLIB_REC(math_unary IRFPM_SIN)
-LJLIB_ASM_(math_cos)		LJLIB_REC(math_unary IRFPM_COS)
-LJLIB_ASM_(math_tan)		LJLIB_REC(math_unary IRFPM_TAN)
-LJLIB_ASM_(math_asin)		LJLIB_REC(math_atrig FF_math_asin)
-LJLIB_ASM_(math_acos)		LJLIB_REC(math_atrig FF_math_acos)
-LJLIB_ASM_(math_atan)		LJLIB_REC(math_atrig FF_math_atan)
-LJLIB_ASM_(math_sinh)		LJLIB_REC(math_htrig IRCALL_sinh)
-LJLIB_ASM_(math_cosh)		LJLIB_REC(math_htrig IRCALL_cosh)
-LJLIB_ASM_(math_tanh)		LJLIB_REC(math_htrig IRCALL_tanh)
+LJLIB_ASM_(math_log10)		LJLIB_REC(math_call IRCALL_log10)
+LJLIB_ASM_(math_exp)		LJLIB_REC(math_call IRCALL_exp)
+LJLIB_ASM_(math_sin)		LJLIB_REC(math_call IRCALL_sin)
+LJLIB_ASM_(math_cos)		LJLIB_REC(math_call IRCALL_cos)
+LJLIB_ASM_(math_tan)		LJLIB_REC(math_call IRCALL_tan)
+LJLIB_ASM_(math_asin)		LJLIB_REC(math_call IRCALL_asin)
+LJLIB_ASM_(math_acos)		LJLIB_REC(math_call IRCALL_acos)
+LJLIB_ASM_(math_atan)		LJLIB_REC(math_call IRCALL_atan)
+LJLIB_ASM_(math_sinh)		LJLIB_REC(math_call IRCALL_sinh)
+LJLIB_ASM_(math_cosh)		LJLIB_REC(math_call IRCALL_cosh)
+LJLIB_ASM_(math_tanh)		LJLIB_REC(math_call IRCALL_tanh)
 LJLIB_ASM_(math_frexp)
-LJLIB_ASM_(math_modf)		LJLIB_REC(.)
-
-LJLIB_PUSH(57.29577951308232)
-LJLIB_ASM_(math_deg)		LJLIB_REC(math_degrad)
-
-LJLIB_PUSH(0.017453292519943295)
-LJLIB_ASM_(math_rad)		LJLIB_REC(math_degrad)
+LJLIB_ASM_(math_modf)
 
 LJLIB_ASM(math_log)		LJLIB_REC(math_log)
 {
@@ -63,11 +57,14 @@ LJLIB_ASM(math_log)		LJLIB_REC(math_log)
 #else
     x = lj_vm_log2(x); y = 1.0 / lj_vm_log2(y);
 #endif
-    setnumV(L->base-1, x*y);  /* Do NOT join the expression to x / y. */
+    setnumV(L->base-1-LJ_FR2, x*y);  /* Do NOT join the expression to x / y. */
     return FFH_RES(1);
   }
   return FFH_RETRY;
 }
+
+LJLIB_LUA(math_deg) /* function(x) return x * 57.29577951308232 end */
+LJLIB_LUA(math_rad) /* function(x) return x * 0.017453292519943295 end */
 
 LJLIB_ASM(math_atan2)		LJLIB_REC(.)
 {
@@ -224,10 +221,6 @@ LUALIB_API int luaopen_math(lua_State *L)
   rs = (RandomState *)lua_newuserdata(L, sizeof(RandomState));
   rs->valid = 0;  /* Use lazy initialization to save some time on startup. */
   LJ_LIB_REG(L, LUA_MATHLIBNAME, math);
-#if defined(LUA_COMPAT_MOD) && !LJ_52
-  lua_getfield(L, -1, "fmod");
-  lua_setfield(L, -2, "mod");
-#endif
   return 1;
 }
 
